@@ -60,8 +60,8 @@ class Network_Packing_Slip {
         error_log('NPS: Adding network admin menus');
         
         // Menu configuration
-        $menu_name = 'PDF Packing Slips'; // Change this to your desired menu name
-        $page_title = 'PDF Packing Slips'; // Change this to your desired page title
+        $menu_name = 'Print PDF Packing Slips'; // Change this to your desired menu name
+        $page_title = 'Print PDF Packing Slips'; // Change this to your desired page title
         
         // ICON OPTIONS (choose one):
         // Option 1: Built-in Dashicon (recommended)
