@@ -99,44 +99,6 @@
             return false;
         });
         
-        // ===== SAVE SETTINGS FUNCTIONALITY =====
-        $('#nps-save-settings').on('click', function(e) {
-            e.preventDefault();
-            console.log('Save settings clicked');
-            
-            var companyInfo = $('#nps-company-info').val();
-            var recipientAddress = $('#nps-recipient-address').val();
-            var customHtml = $('#nps-custom-html').val();
-            
-            console.log('Sending settings to server');
-            
-            $.ajax({
-                url: NPSData.ajaxurl,
-                type: 'POST',
-                dataType: 'json',
-                data: {
-                    action: 'nps_save_settings',
-                    nonce: NPSData.nonce,
-                    company_info: companyInfo,
-                    recipient_address: recipientAddress,
-                    custom_html: customHtml
-                },
-                success: function(response) {
-                    console.log('Settings save response:', response);
-                    
-                    if (response.success) {
-                        showMessage('✓ All settings saved successfully!', 'success');
-                    } else {
-                        showMessage('✗ Error: ' + (response.data ? response.data.message : 'Unknown error'), 'error');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('AJAX error:', status, error);
-                    showMessage('✗ Error saving settings: ' + error, 'error');
-                }
-            });
-        });
-        
         // ===== FILTER ORDERS FUNCTIONALITY =====
         $('#nps-filter-orders').on('click', function(e) {
             e.preventDefault();

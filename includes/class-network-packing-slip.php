@@ -249,18 +249,20 @@ class Network_Packing_Slip {
         
         error_log('NPS AJAX: logo_url = ' . $logo_url);
         
-        // Save to network options
-        update_network_option(null, 'nps_logo_id', $logo_id);
-        update_network_option(null, 'nps_logo_url', $logo_url);
-        update_network_option(null, 'nps_logo_size', $logo_size);
+        $save_result = $this->settings->save_logo($logo_id, $logo_url, $logo_size);
         
-        error_log('NPS AJAX: Network options updated');
+        if (!$save_result['success']) {
+            error_log('NPS AJAX: Failed to persist logo settings - ' . wp_json_encode($save_result['results']));
+            wp_send_json_error(array('message' => 'Failed to save logo settings'));
+        }
+        
+        error_log('NPS AJAX: Network options updated - ' . wp_json_encode($save_result['results']));
         
         // Return success with logo URL
         wp_send_json_success(array(
             'logo_url' => $logo_url,
             'logo_id' => $logo_id,
-            'logo_size' => $logo_size,
+            'logo_size' => $save_result['values']['nps_logo_size'],
             'message' => 'Logo selected and saved successfully'
         ));
     }
@@ -302,32 +304,31 @@ class Network_Packing_Slip {
         
         error_log('NPS AJAX: empty_space = ' . $empty_space);
         
-        // Validate logo dimensions
-        if ($logo_width < 10) {
-            $logo_width = 10;
-        }
-        if ($logo_width > 200) {
-            $logo_width = 200;
-        }
-        if ($logo_height < 10) {
-            $logo_height = 10;
-        }
-        if ($logo_height > 200) {
-            $logo_height = 200;
+        $save_result = $this->settings->save_all_settings(array(
+            'company_info' => $company_info,
+            'recipient_address' => $recipient_address,
+            'custom_html' => $custom_html,
+            'empty_space' => $empty_space,
+            'logo_size' => array(
+                'width' => $logo_width,
+                'height' => $logo_height,
+            ),
+        ));
+        
+        if (!$save_result['success']) {
+            error_log('NPS AJAX: Failed to persist settings - ' . wp_json_encode($save_result['results']));
+            wp_send_json_error(array(
+                'message' => 'Failed to save one or more settings',
+                'results' => $save_result['results'],
+            ));
         }
         
-        // Save all settings
-        update_network_option(null, 'nps_company_info', $company_info);
-        update_network_option(null, 'nps_recipient_address', $recipient_address);
-        update_network_option(null, 'nps_custom_html', $custom_html);
-        update_network_option(null, 'nps_logo_size', array('width' => $logo_width, 'height' => $logo_height));
+        error_log('NPS AJAX: All settings saved - ' . wp_json_encode($save_result['values']));
         
-        // Save empty space using the settings class
-        $this->settings->save_empty_space_after_slip($empty_space);
-        
-        error_log('NPS AJAX: All settings saved');
-        
-        wp_send_json_success(array('message' => 'All settings saved successfully'));
+        wp_send_json_success(array(
+            'message' => 'All settings saved successfully',
+            'values' => $save_result['values'],
+        ));
     }
     
     /**
