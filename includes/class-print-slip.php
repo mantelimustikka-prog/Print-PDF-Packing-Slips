@@ -222,6 +222,8 @@ class Network_Packing_Slip_Print {
             error_log('NPS: mPDF instance created successfully - PORTRAIT orientation');
             
             // Define CSS for mPDF
+            // Note: mPDF does not support flexbox, overflow:hidden on blocks,
+            // or structural pseudo-classes like :last-of-type. Layout uses tables.
             $css = '<style>
             * {
                 box-sizing: border-box;
@@ -231,42 +233,28 @@ class Network_Packing_Slip_Print {
                 margin: 0;
                 padding: 0;
                 width: 100%;
-                height: 100%;
             }
-            .page {
+            /* .page-table is the outer A4-height table rendered via mPDF table layout.
+               page-break-after is set inline per table so we can skip it on the last page. */
+            .page-table {
                 width: 100%;
-                height: ' . $page_content_height_css . 'mm;
-                display: flex;
-                flex-direction: column;
-                page-break-after: always;
-                page-break-inside: avoid;
+                border-collapse: collapse;
                 margin: 0;
                 padding: 0;
-                overflow: hidden;
             }
-            .page:last-of-type {
-                page-break-after: avoid;
-            }
-            .slip-wrapper {
+            /* Each slip lives in a .slip-cell <td> with an explicit height in mm. */
+            .slip-cell {
                 width: 100%;
-                height: ' . $slip_height_css . 'mm;
-                flex-shrink: 0;
-                margin: 0;
-                padding: 0;
-                page-break-inside: avoid;
-                overflow: hidden;
-            }
-            .slip-wrapper.with-gap {
-                margin-bottom: ' . $empty_space_css . 'mm;
-            }
-            .slip {
-                width: 100%;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
+                vertical-align: top;
                 padding: 5mm;
-                margin: 0;
-                overflow: hidden;
+                border: none;
+            }
+            /* Separator row between the two slips on a single page. */
+            .gap-row td {
+                border: none;
+                padding: 0;
+                font-size: 1px;
+                line-height: 1px;
             }
             
             /* Header table with Logo (30%) and Sender (70%) */
@@ -274,7 +262,6 @@ class Network_Packing_Slip_Print {
                 width: 100%;
                 border-collapse: collapse;
                 margin-bottom: 5mm;
-                page-break-inside: avoid;
             }
             
             .header-table td {
@@ -290,7 +277,6 @@ class Network_Packing_Slip_Print {
             }
             
             .logo-section img {
-                object-fit: contain;
                 max-width: 100%;
                 height: auto;
             }
@@ -337,7 +323,6 @@ class Network_Packing_Slip_Print {
                 width: 100%;
                 border-collapse: collapse;
                 margin-bottom: 5mm;
-                page-break-inside: avoid;
             }
             .address-table td {
                 border: 1px solid #000;
@@ -382,11 +367,8 @@ class Network_Packing_Slip_Print {
             
             /* Custom section */
             .custom-section {
-                flex: 1 1 auto;
                 font-size: 10px;
                 line-height: 1.4;
-                min-height: 0;
-                overflow: hidden;
             }
             .custom-section p {
                 margin: 0 0 2mm 0;
@@ -436,13 +418,9 @@ class Network_Packing_Slip_Print {
                 background: #f0f0f0;
                 font-weight: bold;
             }
-            .custom-section br {
-                line-height: 100%;
-            }
             
             /* Products section - at the bottom */
             .products-section {
-                flex-shrink: 0;
                 font-size: 11px;
                 font-weight: bold;
                 margin: 3mm 0 0 0;
@@ -450,7 +428,6 @@ class Network_Packing_Slip_Print {
                 border-top: 1px solid #ccc;
                 word-wrap: break-word;
                 overflow-wrap: break-word;
-                overflow: hidden;
             }
             
             p {
@@ -468,74 +445,100 @@ class Network_Packing_Slip_Print {
 </head>
 <body>';
             
-            $slip_count = 0;
-            $page_slip_count = 0;
             $total_orders = count($order_ids);
-            
+
+            // Collect slip HTML first, then assemble pages.
+            // This avoids having to close an open page table mid-loop.
+            $slips = array();
+
             error_log('NPS: Total orders to process: ' . $total_orders);
-            
-            // Process each order
-            foreach ($order_ids as $index => $order_data) {
+
+            foreach ($order_ids as $order_data) {
                 if (!is_array($order_data)) {
                     error_log('NPS: Skipping invalid order data (not an array)');
                     continue;
                 }
-                
+
                 $order_id = isset($order_data['order_id']) ? intval($order_data['order_id']) : intval($order_data['id']);
-                $site_id = isset($order_data['site_id']) ? intval($order_data['site_id']) : 1;
-                
+                $site_id  = isset($order_data['site_id'])  ? intval($order_data['site_id'])  : 1;
+
                 error_log('NPS: Processing order ID: ' . $order_id . ' from site ID: ' . $site_id);
-                
-                // Open new page div every 2 slips
-                if ($page_slip_count === 0) {
-                    $html .= '<div class="page">';
-                }
-                
-                // Switch to the correct site
+
                 switch_to_blog($site_id);
-                
+
                 try {
                     $order = wc_get_order($order_id);
-                    
+
                     if ($order) {
                         error_log('NPS: Order found - ' . $order->get_order_number());
-                        
-                        $slip_html = $this->generate_single_slip_html($order);
-                        
-                        $wrapper_classes = array('slip-wrapper');
-
-                        if ($page_slip_count === 0 && $empty_space_mm > 0) {
-                            $wrapper_classes[] = 'with-gap';
-                        }
-
-                        $html .= '<div class="' . esc_attr(implode(' ', $wrapper_classes)) . '">';
-                        $html .= '<div class="slip">';
-                        $html .= $slip_html;
-                        $html .= '</div>';
-                        $html .= '</div>';
-                        
-                        $slip_count++;
-                        $page_slip_count++;
-                        
-                        // Close page div after 2 slips
-                        if ($page_slip_count === 2) {
-                            $html .= '</div>';
-                            $page_slip_count = 0;
-                        }
+                        $slips[] = $this->generate_single_slip_html($order);
                     } else {
                         error_log('NPS: Order not found - ID: ' . $order_id . ' on site: ' . $site_id);
                     }
                 } catch (Exception $e) {
                     error_log('NPS: Error processing order: ' . $e->getMessage());
                 }
-                
-                // Restore to network admin
+
                 restore_current_blog();
             }
-            
-            // Close last page if there are remaining slips
-            if ($page_slip_count > 0 && $page_slip_count < 2) {
-                $html .= '</div>';
+
+            $slip_count  = count($slips);
+            $total_pages = (int) ceil($slip_count / 2);
+
+            error_log('NPS: Collected ' . $slip_count . ' slips across ' . $total_pages . ' pages');
+
+            // Build pages using mPDF-compatible table layout.
+            // Each page is a <table> with one or two <tr> rows containing the slip content.
+            // The gap between the two slips on a page is rendered as a dedicated <tr> whose
+            // height equals the configured empty space. Page breaks are set inline so the
+            // last page does NOT get a trailing break.
+            for ($page = 0; $page < $total_pages; $page++) {
+                $is_last_page      = ($page === $total_pages - 1);
+                $page_break_style  = $is_last_page ? '' : ' page-break-after: always;';
+                $first_slip_index  = $page * 2;
+                $second_slip_index = $first_slip_index + 1;
+                $has_second_slip   = isset($slips[$second_slip_index]);
+
+                // Determine row heights.
+                // When there are two slips, split the usable height minus the gap equally.
+                // When there is only one slip (last page, odd count), give it the full height.
+                if ($has_second_slip && $empty_space_mm > 0) {
+                    $row_height_css = $slip_height_css;
+                    $gap_height_css = $empty_space_css;
+                } elseif ($has_second_slip) {
+                    $row_height_css = $slip_height_css;
+                    $gap_height_css = '0';
+                } else {
+                    $row_height_css = $page_content_height_css;
+                    $gap_height_css = '0';
+                }
+
+                $html .= '<table class="page-table" cellpadding="0" cellspacing="0" style="' . $page_break_style . '">';
+
+                // First slip row
+                $html .= '<tr>';
+                $html .= '<td class="slip-cell" style="height:' . $row_height_css . 'mm;">';
+                $html .= $slips[$first_slip_index];
+                $html .= '</td>';
+                $html .= '</tr>';
+
+                if ($has_second_slip) {
+                    // Gap row (only rendered when gap > 0)
+                    if ($empty_space_mm > 0) {
+                        $html .= '<tr class="gap-row" style="height:' . $gap_height_css . 'mm;">';
+                        $html .= '<td style="height:' . $gap_height_css . 'mm;"> </td>';
+                        $html .= '</tr>';
+                    }
+
+                    // Second slip row
+                    $html .= '<tr>';
+                    $html .= '<td class="slip-cell" style="height:' . $row_height_css . 'mm;">';
+                    $html .= $slips[$second_slip_index];
+                    $html .= '</td>';
+                    $html .= '</tr>';
+                }
+
+                $html .= '</table>';
             }
             
             // Strict closing tags
