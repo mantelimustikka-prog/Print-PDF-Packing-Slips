@@ -1,0 +1,242 @@
+/* Network Packing Slip Admin Styles */
+
+.nps-settings-container {
+    max-width: 1200px;
+    margin: 20px 0;
+}
+
+.nps-section {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    margin-bottom: 20px;
+}
+
+.nps-section h2 {
+    margin-top: 0;
+    color: #23282d;
+    font-size: 20px;
+}
+
+.nps-form-group {
+    margin-bottom: 20px;
+}
+
+.nps-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.nps-form-group input[type="text"],
+.nps-form-group input[type="number"],
+.nps-form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.nps-form-group input[type="number"] {
+    width: auto;
+    min-width: 120px;
+}
+
+.nps-form-group textarea {
+    resize: vertical;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.description {
+    font-size: 13px;
+    color: #666;
+    margin-top: 5px;
+    display: block;
+}
+
+#nps-save-message {
+    padding: 10px 12px;
+    border-radius: 4px;
+    font-weight: 500;
+    display: none;
+}
+
+#nps-save-message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+#nps-save-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Print page styles */
+
+.nps-print-container {
+    max-width: 1200px;
+    margin: 20px 0;
+}
+
+.nps-filter-section {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    margin-bottom: 20px;
+}
+
+.nps-filter-section h2 {
+    margin-top: 0;
+    color: #23282d;
+    font-size: 20px;
+}
+
+.nps-orders-section {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.nps-orders-section h2 {
+    margin-top: 0;
+    color: #23282d;
+    font-size: 20px;
+}
+
+.wp-list-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.wp-list-table thead {
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #ddd;
+}
+
+.wp-list-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #23282d;
+    border: 1px solid #ddd;
+}
+
+.wp-list-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.wp-list-table tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+.order-status {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.status-completed {
+    background-color: #90ee90;
+    color: #000;
+}
+
+.status-pending,
+.status-on-hold {
+    background-color: #ffeb3b;
+    color: #000;
+}
+
+.status-processing {
+    background-color: #87ceeb;
+    color: #000;
+}
+
+.status-cancelled,
+.status-failed {
+    background-color: #ff6b6b;
+    color: #fff;
+}
+
+/* Button styles */
+
+.button {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #f1f1f1;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: #333;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.button:hover {
+    background-color: #e5e5e5;
+    border-color: #999;
+}
+
+.button-primary {
+    background-color: #0073aa;
+    border-color: #0073aa;
+    color: #fff;
+}
+
+.button-primary:hover {
+    background-color: #005a87;
+    border-color: #005a87;
+}
+
+.button-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: #fff;
+}
+
+.button-success:hover {
+    background-color: #218838;
+    border-color: #218838;
+}
+
+.button-large {
+    padding: 10px 30px;
+    font-size: 16px;
+}
+
+/* Responsive */
+
+@media (max-width: 768px) {
+    .nps-form-group,
+    .nps-section {
+        padding: 15px;
+    }
+    
+    .wp-list-table th,
+    .wp-list-table td {
+        padding: 8px 4px;
+        font-size: 12px;
+    }
+    
+    .order-status {
+        padding: 2px 6px;
+        font-size: 11px;
+    }
+}
