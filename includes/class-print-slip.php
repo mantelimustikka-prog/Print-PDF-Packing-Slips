@@ -185,6 +185,10 @@ class Network_Packing_Slip_Print {
             // Get empty space setting (convert cm to mm)
             $empty_space_cm = $this->settings->get_empty_space_after_slip();
             $empty_space_mm = $empty_space_cm * 10; // 1cm = 10mm
+            $page_content_height_mm = 281;
+            $slip_height_mm = max(20, ($page_content_height_mm - $empty_space_mm) / 2);
+            $page_content_height_css = number_format($page_content_height_mm, 2, '.', '');
+            $slip_height_css = number_format($slip_height_mm, 2, '.', '');
             error_log('NPS: Empty space after slip: ' . $empty_space_cm . 'cm (' . $empty_space_mm . 'mm)');
             
             // Prepare temp directory
@@ -223,40 +227,30 @@ class Network_Packing_Slip_Print {
             }
             .page {
                 width: 100%;
-                height: 297mm;
+                height: ' . $page_content_height_css . 'mm;
                 page-break-after: always;
                 page-break-inside: avoid;
-                display: flex;
-                flex-direction: column;
-                justify-content: flex-start;
-                position: relative;
                 margin: 0;
                 padding: 0;
+                overflow: hidden;
             }
             .page:last-of-type {
                 page-break-after: avoid;
             }
             .slip-wrapper {
-                position: absolute;
                 width: 100%;
-                left: 0;
-                right: 0;
+                height: ' . $slip_height_css . 'mm;
                 margin: 0;
                 padding: 0;
-            }
-            .slip-top {
-                top: 8mm;
-            }
-            .slip-bottom {
-                bottom: 8mm;
+                page-break-inside: avoid;
+                overflow: hidden;
             }
             .slip {
                 width: 100%;
-                flex: 0 0 auto;
+                height: 100%;
                 padding: 5mm;
                 margin: 0;
-                display: flex;
-                flex-direction: column;
+                overflow: hidden;
             }
             
             /* Header table with Logo (30%) and Sender (70%) */
@@ -264,7 +258,7 @@ class Network_Packing_Slip_Print {
                 width: 100%;
                 border-collapse: collapse;
                 margin-bottom: 5mm;
-                flex-shrink: 0;
+                page-break-inside: avoid;
             }
             
             .header-table td {
@@ -327,7 +321,7 @@ class Network_Packing_Slip_Print {
                 width: 100%;
                 border-collapse: collapse;
                 margin-bottom: 5mm;
-                flex-shrink: 0;
+                page-break-inside: avoid;
             }
             .address-table td {
                 border: 1px solid #000;
@@ -368,14 +362,12 @@ class Network_Packing_Slip_Print {
                 border-top: 2px solid #000;
                 margin: 3mm 0;
                 height: 0;
-                flex-shrink: 0;
             }
             
-            /* Custom section - takes available space and grows */
+            /* Custom section */
             .custom-section {
                 font-size: 10px;
                 line-height: 1.4;
-                flex: 1;
                 overflow: hidden;
             }
             .custom-section p {
@@ -439,7 +431,7 @@ class Network_Packing_Slip_Print {
                 border-top: 1px solid #ccc;
                 word-wrap: break-word;
                 overflow-wrap: break-word;
-                flex-shrink: 0;
+                overflow: hidden;
             }
             
             p {
@@ -491,16 +483,15 @@ class Network_Packing_Slip_Print {
                         
                         $slip_html = $this->generate_single_slip_html($order);
                         
-                        // Add slip wrapper with top/bottom positioning
-                        $slip_position = ($page_slip_count === 0) ? 'slip-top' : 'slip-bottom';
+                        $wrapper_style = ' style="height: ' . $slip_height_css . 'mm;';
                         
-                        // For bottom slip, add margin-top to create empty space
-                        $bottom_style = '';
-                        if ($page_slip_count === 1) {
-                            $bottom_style = ' style="margin-top: ' . $empty_space_mm . 'mm;"';
+                        if ($page_slip_count === 0 && $empty_space_mm > 0) {
+                            $wrapper_style .= ' margin-bottom: ' . $empty_space_mm . 'mm;';
                         }
                         
-                        $html .= '<div class="slip-wrapper ' . $slip_position . '"' . $bottom_style . '>';
+                        $wrapper_style .= '"';
+                        
+                        $html .= '<div class="slip-wrapper"' . $wrapper_style . '>';
                         $html .= '<div class="slip">';
                         $html .= $slip_html;
                         $html .= '</div>';
