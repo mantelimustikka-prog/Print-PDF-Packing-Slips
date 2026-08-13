@@ -182,14 +182,22 @@ class Network_Packing_Slip_Print {
         try {
             error_log('NPS: Creating mPDF instance');
             
-            // Get empty space setting (convert cm to mm)
+            // Calculate 2 slips per A4 portrait page
+            $page_height_mm = 297;
+            $page_margin_top_mm = 8;
+            $page_margin_bottom_mm = 8;
             $empty_space_cm = $this->settings->get_empty_space_after_slip();
             $empty_space_mm = $empty_space_cm * 10; // 1cm = 10mm
-            $page_content_height_mm = 281;
+            $page_content_height_mm = $page_height_mm - $page_margin_top_mm - $page_margin_bottom_mm;
             $slip_height_mm = max(20, ($page_content_height_mm - $empty_space_mm) / 2);
             $page_content_height_css = number_format($page_content_height_mm, 2, '.', '');
             $slip_height_css = number_format($slip_height_mm, 2, '.', '');
-            error_log('NPS: Empty space after slip: ' . $empty_space_cm . 'cm (' . $empty_space_mm . 'mm)');
+            $empty_space_css = number_format($empty_space_mm, 2, '.', '');
+            error_log('NPS: A4 page height: ' . $page_height_mm . 'mm');
+            error_log('NPS: Page margins - top: ' . $page_margin_top_mm . 'mm, bottom: ' . $page_margin_bottom_mm . 'mm');
+            error_log('NPS: Usable page height: ' . $page_content_height_mm . 'mm');
+            error_log('NPS: Empty space after slip setting: ' . $empty_space_cm . 'cm (' . $empty_space_mm . 'mm)');
+            error_log('NPS: Calculated slip height: ' . $slip_height_mm . 'mm');
             
             // Prepare temp directory
             $upload_dir = wp_upload_dir();
@@ -228,6 +236,8 @@ class Network_Packing_Slip_Print {
             .page {
                 width: 100%;
                 height: ' . $page_content_height_css . 'mm;
+                display: flex;
+                flex-direction: column;
                 page-break-after: always;
                 page-break-inside: avoid;
                 margin: 0;
@@ -240,14 +250,20 @@ class Network_Packing_Slip_Print {
             .slip-wrapper {
                 width: 100%;
                 height: ' . $slip_height_css . 'mm;
+                flex-shrink: 0;
                 margin: 0;
                 padding: 0;
                 page-break-inside: avoid;
                 overflow: hidden;
             }
+            .slip-wrapper.with-gap {
+                margin-bottom: ' . $empty_space_css . 'mm;
+            }
             .slip {
                 width: 100%;
                 height: 100%;
+                display: flex;
+                flex-direction: column;
                 padding: 5mm;
                 margin: 0;
                 overflow: hidden;
@@ -366,8 +382,10 @@ class Network_Packing_Slip_Print {
             
             /* Custom section */
             .custom-section {
+                flex: 1 1 auto;
                 font-size: 10px;
                 line-height: 1.4;
+                min-height: 0;
                 overflow: hidden;
             }
             .custom-section p {
@@ -424,6 +442,7 @@ class Network_Packing_Slip_Print {
             
             /* Products section - at the bottom */
             .products-section {
+                flex-shrink: 0;
                 font-size: 11px;
                 font-weight: bold;
                 margin: 3mm 0 0 0;
@@ -483,15 +502,13 @@ class Network_Packing_Slip_Print {
                         
                         $slip_html = $this->generate_single_slip_html($order);
                         
-                        $wrapper_style = ' style="height: ' . $slip_height_css . 'mm;';
-                        
+                        $wrapper_classes = array('slip-wrapper');
+
                         if ($page_slip_count === 0 && $empty_space_mm > 0) {
-                            $wrapper_style .= ' margin-bottom: ' . $empty_space_mm . 'mm;';
+                            $wrapper_classes[] = 'with-gap';
                         }
-                        
-                        $wrapper_style .= '"';
-                        
-                        $html .= '<div class="slip-wrapper"' . $wrapper_style . '>';
+
+                        $html .= '<div class="' . esc_attr(implode(' ', $wrapper_classes)) . '">';
                         $html .= '<div class="slip">';
                         $html .= $slip_html;
                         $html .= '</div>';
